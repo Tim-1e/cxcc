@@ -1,0 +1,16 @@
+* text=auto
+
+*.md text eol=lf
+*.sh text eol=lf
+*.mjs text eol=lf
+*.ps1 text eol=crlf
+*.cs text eol=lf
+*.csproj text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.example text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+.gitattributes text eol=lf
+.gitignore text eol=lf

@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "defaults": {
+    "codex": "sub",
+    "claude": "sub"
+  },
+  "codex": [
+    {
+      "name": "sub",
+      "mode": "sub",
+      "home": "~/.codex",
+      "codex_profile": "sub"
+    },
+    {
+      "name": "api:myrouter",
+      "aliases": ["myrouter", "api-myrouter"],
+      "mode": "api",
+      "home": "~/.codex",
+      "codex_profile": "api-myrouter",
+      "secret_id": "codex.api-myrouter",
+      "windows_secret": "~/.ai-secrets/codex-api-myrouter.ps1",
+      "linux_secret": "~/.ai-secrets/codex-api-myrouter.env"
+    },
+    {
+      "name": "sub:work",
+      "aliases": ["work-sub"],
+      "mode": "sub",
+      "home": "~/.codex-work",
+      "codex_profile": "sub"
+    }
+  ],
+  "claude": [
+    {
+      "name": "sub",
+      "mode": "sub"
+    },
+    {
+      "name": "api:myrouter",
+      "aliases": ["myrouter", "api-myrouter"],
+      "mode": "api",
+      "base_url": "https://claude.example.com",
+      "secret_id": "claude.api-myrouter",
+      "windows_secret": "~/.ai-secrets/claude-api-myrouter.ps1",
+      "linux_secret": "~/.ai-secrets/claude-api-myrouter.env"
+    }
+  ]
+}

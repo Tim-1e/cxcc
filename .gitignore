@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+
+# Local agent planning and migration records
+/HANDOFF.md
+/task_plan.md
+/findings.md
+/progress.md
+/docs/baseline-tests.md
+/docs/migration-hashes.md
+/docs/migration-inventory.md

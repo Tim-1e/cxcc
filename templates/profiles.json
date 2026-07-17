@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "defaults": {
+    "codex": "sub",
+    "codex_app": "sub",
+    "claude": "sub"
+  },
+  "codex": [
+    {
+      "name": "sub",
+      "aliases": ["subscription", "chatgpt"],
+      "mode": "sub",
+      "home": "~/.codex",
+      "codex_profile": "sub",
+      "description": "ChatGPT/Codex subscription login cached under CODEX_HOME"
+    },
+    {
+      "name": "api",
+      "aliases": ["router"],
+      "mode": "api",
+      "home": "~/.codex",
+      "codex_profile": "api",
+      "secret_id": "codex.api",
+      "windows_secret": "~/.ai-secrets/codex-api.ps1",
+      "linux_secret": "~/.ai-secrets/codex-api.env",
+      "description": "Default Codex API router"
+    }
+  ],
+  "claude": [
+    {
+      "name": "sub",
+      "aliases": ["subscription", "claude-sub"],
+      "mode": "sub",
+      "description": "Claude Code subscription/OAuth login"
+    },
+    {
+      "name": "api",
+      "aliases": ["router", "claude-api"],
+      "mode": "api",
+      "base_url": "https://claude.example.com",
+      "secret_id": "claude.api",
+      "windows_secret": "~/.ai-secrets/claude-api.ps1",
+      "linux_secret": "~/.ai-secrets/claude-api.env",
+      "description": "Default Claude Code API router"
+    },
+    {
+      "name": "api:docker",
+      "aliases": ["docker", "api-docker"],
+      "mode": "api",
+      "base_url": "https://claude.example.com",
+      "secret_id": "claude.api-docker",
+      "windows_secret": "~/.ai-secrets/claude-api-docker.ps1",
+      "linux_secret": "~/.ai-secrets/claude-api-docker.env",
+      "description": "Example Claude Code API profile"
+    }
+  ]
+}

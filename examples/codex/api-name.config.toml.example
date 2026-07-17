@@ -1,0 +1,9 @@
+model_provider = "api-name"
+model = "gpt-5.5"
+disable_response_storage = true
+
+[model_providers.api-name]
+name = "API name"
+base_url = "https://your-router.example/v1"
+wire_api = "responses"
+env_key = "OPENAI_API_KEY"

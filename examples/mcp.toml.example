@@ -1,0 +1,32 @@
+# ~/.ai-env/mcp.toml — single source of truth for MCP servers (Claude Code + Codex).
+# Copy to ~/.ai-env/mcp.toml and edit, then run `mcp sync`.
+#
+# `mcp sync` pushes each ENABLED server to its global targets:
+#   Claude -> ~/.claude.json mcpServers
+#   Codex  -> ~/.codex/config.toml [mcp_servers.NAME]
+#
+# A server is EITHER stdio (command = [...]) OR http (url = "...").
+# sync    = which tools receive it. Omit = both ["claude", "codex"].
+# enabled = false keeps the server defined but skips it on sync.
+#           (Claude has no per-server flag, so disabled = omitted there;
+#            Codex uses its native enabled = false.)
+
+# stdio server, both tools:
+[mcp.context7]
+command = ["npx", "-y", "@upstash/context7-mcp@3.2.4"]
+env = {}
+sync = ["claude", "codex"]
+enabled = false
+
+# stdio server with args + env, Claude only:
+[mcp.filesystem]
+command = ["npx", "-y", "@modelcontextprotocol/server-filesystem@2026.7.10", "~/projects"]
+env = { ALLOW_DIR = "~/projects" }
+sync = ["claude"]
+enabled = false
+
+# http server, defined but disabled:
+[mcp.figma]
+url = "https://mcp.figma.com/mcp"
+sync = ["codex"]
+enabled = false
