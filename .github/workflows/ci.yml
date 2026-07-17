@@ -175,15 +175,16 @@ jobs:
 
       - name: Build release assets
         env:
-          VERSION: ${{ github.ref_name }}
+          CXCC_RELEASE_VERSION: ${{ github.ref_name }}
         run: |
+          test -z "${VERSION:-}"
           payload="$RUNNER_TEMP/payload"
           assets="$RUNNER_TEMP/assets"
           mkdir -p "$payload" "$assets"
           cp install.ps1 install.sh load.ps1 load.sh README.md "$payload/"
           cp -R src templates "$payload/"
-          printf '%s' "$VERSION" >"$payload/VERSION"
-          tar -czf "$assets/cxcc-$VERSION-posix.tar.gz" -C "$payload" .
+          printf '%s' "$CXCC_RELEASE_VERSION" >"$payload/VERSION"
+          tar -czf "$assets/cxcc-$CXCC_RELEASE_VERSION-posix.tar.gz" -C "$payload" .
 
           dotnet publish ./src/bridge/CodexProviderBridge/CodexProviderBridge.csproj \
             --configuration Release \
@@ -196,7 +197,7 @@ jobs:
             --output "$payload/bin/win-x64" \
             --nologo
           test -f "$payload/bin/win-x64/codex-provider-bridge.exe"
-          (cd "$payload" && zip -qr "$assets/cxcc-$VERSION-windows-x64.zip" .)
+          (cd "$payload" && zip -qr "$assets/cxcc-$CXCC_RELEASE_VERSION-windows-x64.zip" .)
           (cd "$assets" && sha256sum cxcc-*.tar.gz cxcc-*.zip >SHA256SUMS)
 
       - name: Publish GitHub Release
