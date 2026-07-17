@@ -35,14 +35,17 @@ dotfiles bootstrap
 ```text
 ~/.local/share/cxcc/
 ├── versions/<version>/
+├── .cxcc-root
 ├── current.json
 ├── load.ps1
 └── load.sh
 ```
 
 - Release artifact 安装到版本目录。
-- `current.json` 指向当前版本；切换必须原子化。
+- `current.json` 使用 `{"schema":1,"version":"v0.1.0","previous":null}` 指向当前与前一版本；切换必须原子化。
 - loader 是稳定入口，不从 GitHub `main` 直接 source 生产代码。
 - 下载内容必须校验 SHA-256。
 - 升级保留前一版本以支持回滚。
 - 安装与升级默认不覆盖 `~/.ai-env`、`~/.ai-secrets`、`~/.codex`、`~/.claude`。
+- 稳定 loader 在调用者 shell 内加载 `cx`、`cc`、`mcp`，安装器不修改 PATH。
+- Windows x64 artifact 包含自包含 Codex App Bridge；源码构建回退仅用于开发。

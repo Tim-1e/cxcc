@@ -18,7 +18,31 @@
 
 - Windows PowerShell、Linux、macOS 与 Git Bash 由 CI 持续验证。
 - 用户状态保留在 `~/.ai-env`、`~/.ai-secrets`、`~/.codex` 与 `~/.claude`。
-- 独立安装器和首个 Release 尚未发布；目前仍由 [`Tim-1e/dotfiles`](https://github.com/Tim-1e/dotfiles) 提供生产安装入口。
+
+## 安装
+
+PowerShell 7：
+
+```powershell
+$version = "v0.1.0"
+$installer = Invoke-RestMethod "https://raw.githubusercontent.com/Tim-1e/cxcc/$version/install.ps1"
+& ([scriptblock]::Create($installer)) -Version $version
+```
+
+Bash：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Tim-1e/cxcc/v0.1.0/install.sh |
+  bash -s -- --version v0.1.0
+```
+
+安装器会校验 Release artifact 的 SHA-256，然后写入 `~/.local/share/cxcc/versions/<version>`。在 PowerShell profile 中 dot-source `~/.local/share/cxcc/load.ps1`，或在 Bash/Zsh 配置中 source `~/.local/share/cxcc/load.sh`。需要自定义安装根时设置 `CXCC_HOME`，其末级目录名必须为 `cxcc`。
+
+## 升级与卸载
+
+用目标精确版本重新运行安装命令即可升级；旧版本会保留。将上面同版本安装器改为 `-Rollback` / `--rollback` 可回到前一版，改为 `-Uninstall` / `--uninstall` 可卸载 cxcc。这些操作都不会删除用户 profile、secret、Codex 或 Claude 状态。
+
+运行时需要 Node.js。Windows x64 Release 自带 Codex App Bridge，不需要 .NET SDK。安装器不修改 PATH，升级或回滚后请重新加载 shell profile。
 
 ## 安全边界
 

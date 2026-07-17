@@ -1,5 +1,20 @@
 # AI environment profile functions. Source this file from an interactive shell.
 
+if [ -n "${CXCC_PAYLOAD_ROOT:-}" ]; then
+  CXCC_HEALTH_HELPER="$CXCC_PAYLOAD_ROOT/src/shell/ai-health.mjs"
+else
+  if [ -n "${BASH_VERSION:-}" ]; then
+    _cxcc_shell_file="${BASH_SOURCE[0]}"
+  elif [ -n "${ZSH_VERSION:-}" ]; then
+    _cxcc_shell_file="$(eval 'printf %s "${(%):-%N}"')"
+  else
+    _cxcc_shell_file=""
+  fi
+  _cxcc_shell_dir="$(CDPATH= cd -- "$(dirname -- "$_cxcc_shell_file")" && pwd)"
+  CXCC_HEALTH_HELPER="$_cxcc_shell_dir/ai-health.mjs"
+  unset _cxcc_shell_file _cxcc_shell_dir
+fi
+
 AI_HOME="${AI_ENV_HOME:-$HOME}"
 AI_CONFIG_DIR="${AI_HOME}/.ai-env"
 AI_REGISTRY_PATH="${AI_CONFIG_DIR}/profiles.json"
@@ -1765,7 +1780,7 @@ _ai_health_show() {
   local tool="$1" fresh="${2:-0}" flag=""
   [ "$fresh" = "1" ] && flag="--fresh"
   _ai_require_node >/dev/null 2>&1 || return 1
-  local mjs="$HOME/.local/share/ai-env/ai-health.mjs"
+  local mjs="$CXCC_HEALTH_HELPER"
   [ -f "$mjs" ] || { echo "health helper missing: $mjs" >&2; return 1; }
   node "$mjs" "$tool" $flag
 }

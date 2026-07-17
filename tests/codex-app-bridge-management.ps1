@@ -12,6 +12,7 @@ $previous = @{
   AI_ENV_HOME = $env:AI_ENV_HOME
   AI_CODEX_APP_BRIDGE_HOME = $env:AI_CODEX_APP_BRIDGE_HOME
   AI_CODEX_APP_BRIDGE_PROJECT = $env:AI_CODEX_APP_BRIDGE_PROJECT
+  AI_CODEX_APP_BRIDGE_BINARY = $env:AI_CODEX_APP_BRIDGE_BINARY
   AI_CODEX_APP_REAL_CLI = $env:AI_CODEX_APP_REAL_CLI
   AI_CODEX_APP_BRIDGE_ENV_TARGET = $env:AI_CODEX_APP_BRIDGE_ENV_TARGET
   AI_CODEX_CONFIG_PATH = $env:AI_CODEX_CONFIG_PATH
@@ -24,6 +25,9 @@ try {
   $env:AI_ENV_HOME = $testHome
   $env:AI_CODEX_APP_BRIDGE_HOME = $bridgeHome
   $env:AI_CODEX_APP_BRIDGE_PROJECT = Join-Path $SourceDir "src/bridge/CodexProviderBridge/CodexProviderBridge.csproj"
+  $prebuiltBridge = Join-Path $tmpRoot "codex-provider-bridge.exe"
+  [IO.File]::WriteAllText($prebuiltBridge, "prebuilt-bridge-fixture", [Text.UTF8Encoding]::new($false))
+  $env:AI_CODEX_APP_BRIDGE_BINARY = $prebuiltBridge
   $trustedBundle = Join-Path $tmpRoot "trusted-bundle-v1"
   $trustedBundleV2 = Join-Path $tmpRoot "trusted-bundle-v2"
   New-Item -ItemType Directory -Force -Path $trustedBundle, $trustedBundleV2 | Out-Null
@@ -80,6 +84,7 @@ try {
   foreach ($path in @($bridgePath, $settingsPath, $activationPath)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Install did not create $path" }
   }
+  if ((Get-FileHash -LiteralPath $bridgePath -Algorithm SHA256).Hash -cne (Get-FileHash -LiteralPath $prebuiltBridge -Algorithm SHA256).Hash) { throw "Install did not use the prebuilt bridge" }
   if ($env:CODEX_CLI_PATH -cne $bridgePath) { throw "Install did not activate CODEX_CLI_PATH" }
   $settings = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json -Depth 20
   $securedRealCli = Join-Path $bridgeHome "codex.exe"

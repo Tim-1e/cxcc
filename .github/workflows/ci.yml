@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   pull_request:
 
 permissions:
@@ -66,11 +68,16 @@ jobs:
         run: |
           test "$(git ls-files -s -- tests/ai-env-smoke.sh | awk '{ print $1 }')" = "100755"
           test "$(git ls-files -s -- tests/public-repo-hygiene.sh | awk '{ print $1 }')" = "100755"
-          bash -n src/shell/cxcc.sh tests/ai-env-smoke.sh tests/public-repo-hygiene.sh
+          test "$(git ls-files -s -- install.sh | awk '{ print $1 }')" = "100755"
+          test "$(git ls-files -s -- load.sh | awk '{ print $1 }')" = "100755"
+          test "$(git ls-files -s -- tests/installer-lifecycle.sh | awk '{ print $1 }')" = "100755"
+          bash -n install.sh load.sh src/shell/cxcc.sh tests/ai-env-smoke.sh tests/installer-lifecycle.sh tests/public-repo-hygiene.sh
           node --check src/shell/ai-health.mjs
 
       - name: Test Shell helpers
-        run: bash ./tests/ai-env-smoke.sh
+        run: |
+          bash ./tests/ai-env-smoke.sh
+          bash ./tests/installer-lifecycle.sh
 
   windows:
     name: PowerShell and Bridge
@@ -93,6 +100,8 @@ jobs:
       - name: Check PowerShell syntax
         run: |
           $files = @(
+            "install.ps1"
+            "load.ps1"
             "src/powershell/CxCc/CxCc.ps1"
             "src/powershell/CxCc/Profiles.ps1"
             "src/powershell/CxCc/ToolRuntime.ps1"
@@ -109,6 +118,7 @@ jobs:
             "tests/codex-all-provider-sessions.ps1"
             "tests/codex-provider-bridge.ps1"
             "tests/codex-app-bridge-management.ps1"
+            "tests/installer-lifecycle.ps1"
             "tests/powershell-loader.ps1"
             "tests/powershell-profile-smoke.ps1"
           )
@@ -129,6 +139,7 @@ jobs:
           & ./tests/ai-env-health.ps1
           & ./tests/ai-env-mcp.ps1
           & ./tests/codex-all-provider-sessions.ps1
+          & ./tests/installer-lifecycle.ps1
           & ./tests/powershell-loader.ps1
           & ./tests/powershell-profile-smoke.ps1
 
@@ -142,3 +153,61 @@ jobs:
         run: |
           & ./tests/codex-provider-bridge.ps1
           & ./tests/codex-app-bridge-management.ps1
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - secrets
+      - shell
+      - windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build release assets
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          payload="$RUNNER_TEMP/payload"
+          assets="$RUNNER_TEMP/assets"
+          mkdir -p "$payload" "$assets"
+          cp install.ps1 install.sh load.ps1 load.sh README.md "$payload/"
+          cp -R src templates "$payload/"
+          printf '%s' "$VERSION" >"$payload/VERSION"
+          tar -czf "$assets/cxcc-$VERSION-posix.tar.gz" -C "$payload" .
+
+          dotnet publish ./src/bridge/CodexProviderBridge/CodexProviderBridge.csproj \
+            --configuration Release \
+            --runtime win-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=None \
+            -p:DebugSymbols=false \
+            --output "$payload/bin/win-x64" \
+            --nologo
+          test -f "$payload/bin/win-x64/codex-provider-bridge.exe"
+          (cd "$payload" && zip -qr "$assets/cxcc-$VERSION-windows-x64.zip" .)
+          (cd "$assets" && sha256sum cxcc-*.tar.gz cxcc-*.zip >SHA256SUMS)
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "$RUNNER_TEMP/assets/cxcc-$GITHUB_REF_NAME-posix.tar.gz" \
+            "$RUNNER_TEMP/assets/cxcc-$GITHUB_REF_NAME-windows-x64.zip" \
+            "$RUNNER_TEMP/assets/SHA256SUMS" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --generate-notes \
+            --title "cxcc $GITHUB_REF_NAME"

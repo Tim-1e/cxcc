@@ -373,6 +373,23 @@ function Get-CodexAppBridgeProjectPath {
   throw "Codex App bridge project was not found. Set AI_CODEX_APP_BRIDGE_PROJECT to CodexProviderBridge.csproj."
 }
 
+function Get-CodexAppBridgeBinaryPath {
+  if ($env:AI_CODEX_APP_BRIDGE_BINARY) {
+    $overridePath = [IO.Path]::GetFullPath([Environment]::ExpandEnvironmentVariables($env:AI_CODEX_APP_BRIDGE_BINARY))
+    if (-not (Test-Path -LiteralPath $overridePath -PathType Leaf)) {
+      throw "AI_CODEX_APP_BRIDGE_BINARY does not exist: $overridePath"
+    }
+    return $overridePath
+  }
+
+  $cxccSourceRoot = Get-Variable -Name CxCcSourceRoot -Scope Script -ValueOnly -ErrorAction SilentlyContinue
+  if ($cxccSourceRoot) {
+    $releaseBinary = Join-Path $cxccSourceRoot "bin\win-x64\codex-provider-bridge.exe"
+    if (Test-Path -LiteralPath $releaseBinary -PathType Leaf) { return (Resolve-Path -LiteralPath $releaseBinary).Path }
+  }
+  return $null
+}
+
 function Get-CodexAppPackageInstallLocations {
   if (-not $IsWindows) { return @() }
 
@@ -525,7 +542,8 @@ function Install-CodexAppBridge {
   if (Test-CodexAppBridgeProcessRunning -BridgePath $bridgePath) {
     throw "Codex App is using this bridge. Close Codex App before reinstalling the bridge."
   }
-  $projectPath = Get-CodexAppBridgeProjectPath
+  $prebuiltBridgePath = Get-CodexAppBridgeBinaryPath
+  $projectPath = if ($prebuiltBridgePath) { $null } else { Get-CodexAppBridgeProjectPath }
   $trustedSourceCliPath = Resolve-CodexAppRealCliPath
   $target = Get-CodexAppBridgeEnvironmentTarget
   $existingActivation = if (Test-Path -LiteralPath $activationPath -PathType Leaf) {
@@ -539,9 +557,13 @@ function Install-CodexAppBridge {
   Assert-CodexAppBridgeInstallPathsProtected -BridgeRoot $bridgeRoot
   New-Item -ItemType Directory -Force -Path $stagingPath | Out-Null
   try {
-    & dotnet publish $projectPath -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o $stagingPath --nologo | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
     $publishedPath = Join-Path $stagingPath "codex-provider-bridge.exe"
+    if ($prebuiltBridgePath) {
+      Copy-Item -LiteralPath $prebuiltBridgePath -Destination $publishedPath
+    } else {
+      & dotnet publish $projectPath -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o $stagingPath --nologo | Out-Host
+      if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
+    }
     if (-not (Test-Path -LiteralPath $publishedPath -PathType Leaf)) { throw "Bridge publish did not create $publishedPath" }
 
     $trustedSourceRoot = Split-Path -Parent $trustedSourceCliPath
